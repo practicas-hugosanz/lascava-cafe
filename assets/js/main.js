@@ -39,8 +39,21 @@
     });
   });
 
+  /* ----- vídeo del hero ----- */
+  /* reproduce mientras el hero se ve; si el navegador bloquea el autoplay
+     (ahorro de batería, ahorro de datos…) lo reintenta en cuanto hay datos o el usuario interactúa */
   const video = document.querySelector('.hero video');
-  if (reduce && video) { video.removeAttribute('autoplay'); video.pause(); }
+  if (video && reduce) { video.removeAttribute('autoplay'); video.pause(); }
+  else if (video) {
+    let visible = true;
+    const play = () => { if (visible && video.paused) video.play().catch(() => {}); };
+    new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (visible) play(); else video.pause();
+    }).observe(video.closest('.hero'));
+    video.addEventListener('canplay', play);
+    ['pointerdown', 'touchend', 'keydown', 'scroll'].forEach((ev) => addEventListener(ev, play, { passive: true }));
+  }
 
   const solid = () => top.classList.toggle('is-solid', scrollY > innerHeight * 0.9);
 
@@ -76,9 +89,6 @@
     .to({}, { duration: 0.15 });
 
   ScrollTrigger.create({ trigger: '.hero', start: 'bottom top+=72', onToggle: (s) => top.classList.toggle('is-solid', s.isActive || s.progress === 1), onEnter: () => top.classList.add('is-solid'), onLeaveBack: () => top.classList.remove('is-solid') });
-
-  /* pausa el vídeo cuando no se ve */
-  if (video) ScrollTrigger.create({ trigger: '.hero', start: 'top top', end: 'bottom top', onToggle: (s) => (s.isActive ? video.play().catch(() => {}) : video.pause()) });
 
   /* ----- cocina: galería horizontal fijada (escritorio) ----- */
   /* va antes que el resto: su pin-spacing desplaza a todos los triggers de debajo */
